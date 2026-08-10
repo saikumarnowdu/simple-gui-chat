@@ -5,8 +5,8 @@
   "terminals": [
     {
       "name": "chat-server",
-      "command": "java -cp out:src chatting.application.Server",
-      "description": "Swing chat server GUI listening on port 6001."
+      "command": "./scripts/cloud-agent-install.sh && exec java -cp out:src chatting.application.Server",
+      "description": "Compile if needed, then run the Swing chat server on port 6001."
     },
     {
       "name": "chat-client",
