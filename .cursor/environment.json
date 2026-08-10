@@ -1,0 +1,17 @@
+{
+  "name": "Simple GUI Chat",
+  "install": "./scripts/cloud-agent-install.sh",
+  "start": "./scripts/cloud-agent-ensure-built.sh",
+  "terminals": [
+    {
+      "name": "chat-server",
+      "command": "./scripts/cloud-agent-install.sh && exec java -cp out:src chatting.application.Server",
+      "description": "Compile if needed, then run the Swing chat server on port 6001."
+    },
+    {
+      "name": "chat-client",
+      "command": "./scripts/cloud-agent-start-client.sh",
+      "description": "Swing chat client that connects to the local server."
+    }
+  ]
+}
