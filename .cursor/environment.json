@@ -1,6 +1,7 @@
 {
   "name": "Simple GUI Chat",
   "install": "./scripts/cloud-agent-install.sh",
+  "start": "./scripts/cloud-agent-ensure-built.sh",
   "terminals": [
     {
       "name": "chat-server",
