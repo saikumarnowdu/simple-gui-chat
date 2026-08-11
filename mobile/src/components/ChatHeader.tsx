@@ -14,7 +14,7 @@ function ChatHeaderComponent({ name, online, avatar, onBack }: ChatHeaderProps) 
   return (
     <View style={styles.header}>
       <Pressable onPress={onBack} hitSlop={12} style={styles.backButton} accessibilityRole="button">
-        <Image source={require('../../assets/avatars/3.png')} style={styles.backIcon} />
+        <Image source={require('../../assets/avatars/3.png')} style={styles.backIcon} tintColor={colors.white} />
       </Pressable>
 
       <Image source={avatar} style={styles.avatar} />
@@ -25,8 +25,8 @@ function ChatHeaderComponent({ name, online, avatar, onBack }: ChatHeaderProps) 
       </View>
 
       <View style={styles.actions}>
-        <Image source={require('../../assets/avatars/video.png')} style={styles.actionIcon} />
-        <Image source={require('../../assets/avatars/phone.png')} style={styles.phoneIcon} />
+        <Image source={require('../../assets/avatars/video.png')} style={styles.actionIcon} tintColor={colors.white} />
+        <Image source={require('../../assets/avatars/phone.png')} style={styles.phoneIcon} tintColor={colors.white} />
         <Ionicons name="ellipsis-vertical" size={18} color={colors.white} />
       </View>
     </View>
