@@ -1,17 +1,13 @@
-import { useEffect, useRef } from 'react';
-import {
-  FlatList,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChatHeader } from '../components/ChatHeader';
-import { MessageBubble } from '../components/MessageBubble';
 import { MessageInput } from '../components/MessageInput';
+import { MessageList } from '../components/MessageList';
+import { PerfHud } from '../components/PerfHud';
+import { StressControls } from '../components/StressControls';
 import { ROLE_META } from '../config';
 import { useChat } from '../hooks/useChat';
+import { useAppSelector } from '../store/hooks';
 import type { ChatRole } from '../types';
 import { colors, spacing } from '../theme';
 
@@ -28,14 +24,11 @@ const AVATARS = {
 export function ChatScreen({ role, onBack }: ChatScreenProps) {
   const peerRole = role === 'gaitonde' ? 'bunty' : 'gaitonde';
   const peerMeta = ROLE_META[peerRole];
-  const { status, messages, presence, error, sendMessage, reconnect, clearError } = useChat(role);
-  const listRef = useRef<FlatList>(null);
+  const { sendMessage, reconnect, clearError, startStress, stopStress } = useChat(role);
 
-  useEffect(() => {
-    if (messages.length > 0) {
-      listRef.current?.scrollToEnd({ animated: true });
-    }
-  }, [messages.length]);
+  const status = useAppSelector((state) => state.session.status);
+  const presence = useAppSelector((state) => state.session.presence);
+  const error = useAppSelector((state) => state.session.error);
 
   const peerOnline = presence[peerRole];
   const canSend = status === 'joined';
@@ -65,6 +58,9 @@ export function ChatScreen({ role, onBack }: ChatScreenProps) {
         )}
       </View>
 
+      <PerfHud />
+      <StressControls onStart={startStress} onStop={stopStress} />
+
       {error ? (
         <Pressable style={styles.errorBox} onPress={clearError}>
           <Text style={styles.errorText}>{error}</Text>
@@ -72,22 +68,7 @@ export function ChatScreen({ role, onBack }: ChatScreenProps) {
         </Pressable>
       ) : null}
 
-      <FlatList
-        ref={listRef}
-        style={styles.list}
-        contentContainerStyle={styles.listContent}
-        data={messages}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <MessageBubble message={item} selfRole={role} />}
-        ListEmptyComponent={
-          <View style={styles.empty}>
-            <Text style={styles.emptyTitle}>No messages yet</Text>
-            <Text style={styles.emptyBody}>
-              Open the other role on another device or emulator to start chatting.
-            </Text>
-          </View>
-        }
-      />
+      <MessageList selfRole={role} />
 
       <SafeAreaView edges={['bottom']} style={styles.inputSafe}>
         <MessageInput disabled={!canSend} onSend={sendMessage} />
@@ -134,32 +115,6 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontSize: 11,
     marginTop: 4,
-  },
-  list: {
-    flex: 1,
-  },
-  listContent: {
-    paddingVertical: spacing.md,
-    flexGrow: 1,
-  },
-  empty: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: spacing.xl,
-    paddingTop: 80,
-  },
-  emptyTitle: {
-    color: colors.text,
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  emptyBody: {
-    color: colors.textMuted,
-    fontSize: 14,
-    textAlign: 'center',
-    marginTop: spacing.sm,
-    lineHeight: 20,
   },
   inputSafe: {
     backgroundColor: colors.backgroundTint,

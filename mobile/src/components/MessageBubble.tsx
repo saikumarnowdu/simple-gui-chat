@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import type { ChatMessage, ChatRole } from '../types';
 import { colors, spacing } from '../theme';
@@ -7,13 +8,15 @@ type MessageBubbleProps = {
   selfRole: ChatRole;
 };
 
-export function MessageBubble({ message, selfRole }: MessageBubbleProps) {
+function MessageBubbleComponent({ message, selfRole }: MessageBubbleProps) {
   const isMine = message.from === selfRole;
 
   return (
     <View style={[styles.row, isMine ? styles.rowMine : styles.rowTheirs]}>
       <View style={[styles.bubble, isMine ? styles.bubbleMine : styles.bubbleTheirs]}>
-        <Text style={styles.text}>{message.text}</Text>
+        <Text style={styles.text} numberOfLines={6}>
+          {message.text}
+        </Text>
         <Text style={[styles.time, isMine ? styles.timeMine : styles.timeTheirs]}>
           {message.time}
         </Text>
@@ -22,10 +25,25 @@ export function MessageBubble({ message, selfRole }: MessageBubbleProps) {
   );
 }
 
+function propsAreEqual(prev: MessageBubbleProps, next: MessageBubbleProps) {
+  return (
+    prev.selfRole === next.selfRole &&
+    prev.message.id === next.message.id &&
+    prev.message.text === next.message.text &&
+    prev.message.from === next.message.from &&
+    prev.message.time === next.message.time
+  );
+}
+
+/** Memoized bubble — avoids re-rendering unchanged rows when batches append. */
+export const MessageBubble = memo(MessageBubbleComponent, propsAreEqual);
+
 const styles = StyleSheet.create({
   row: {
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
     paddingHorizontal: spacing.sm,
+    // Approximate fixed row budget helps list recycling feel stable.
+    minHeight: 56,
   },
   rowMine: {
     alignItems: 'flex-end',
@@ -36,8 +54,8 @@ const styles = StyleSheet.create({
   bubble: {
     maxWidth: '78%',
     borderRadius: 8,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xs,
     paddingHorizontal: spacing.md,
   },
   bubbleMine: {
@@ -48,12 +66,12 @@ const styles = StyleSheet.create({
   },
   text: {
     color: colors.text,
-    fontSize: 16,
-    lineHeight: 22,
+    fontSize: 15,
+    lineHeight: 20,
   },
   time: {
-    marginTop: spacing.xs,
-    fontSize: 11,
+    marginTop: 2,
+    fontSize: 10,
     alignSelf: 'flex-end',
   },
   timeMine: {

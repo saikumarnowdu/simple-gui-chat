@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing } from '../theme';
@@ -9,7 +10,7 @@ type ChatHeaderProps = {
   onBack: () => void;
 };
 
-export function ChatHeader({ name, online, avatar, onBack }: ChatHeaderProps) {
+function ChatHeaderComponent({ name, online, avatar, onBack }: ChatHeaderProps) {
   return (
     <View style={styles.header}>
       <Pressable onPress={onBack} hitSlop={12} style={styles.backButton} accessibilityRole="button">
@@ -31,6 +32,8 @@ export function ChatHeader({ name, online, avatar, onBack }: ChatHeaderProps) {
     </View>
   );
 }
+
+export const ChatHeader = memo(ChatHeaderComponent);
 
 const styles = StyleSheet.create({
   header: {

@@ -44,6 +44,14 @@ Then press `a` for Android, `i` for iOS, or `w` for web.
 2. Open a second session (another device, emulator, or browser tab) and pick the other role.
 3. Send messages — they are relayed through the WebSocket server.
 
+### High-throughput (200–500 msg/s)
+
+Messages are stored in Redux and batched before UI updates. In chat, tap **200/s**, **300/s**, or **500/s** to stress-test ingest; the HUD shows ingest rate, flush rate, and store size.
+
+```bash
+cd mobile && npm run perf:stress
+```
+
 ### Connecting a physical device
 
 Set the host machine IP before starting Expo:
