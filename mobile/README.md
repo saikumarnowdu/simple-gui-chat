@@ -1,33 +1,28 @@
 # Simple GUI Chat — Mobile
 
-Expo React Native client for the simple two-person chat.
+Expo React Native client with Redux, rooms, bot, backup/restore, and high-throughput rendering.
 
 ## Scripts
 
-- `npm start` — start Expo
-- `npm run android` — open Android
-- `npm run ios` — open iOS simulator
-- `npm run web` — open in browser
-- `npm run typecheck` — TypeScript check
-- `npm run perf:stress` — verify 200–500 msg/s Redux ingest + batching
+- `npm start` — Expo
+- `npm run web` — web
+- `npm run typecheck` — TypeScript
+- `npm run perf:stress` — 200–500 msg/s Redux ingest check
 
-## Roles
+## Flow
 
-- **Gaitonde** — server-side identity (matches Java `Server.java`)
-- **Bunty** — client-side identity (matches Java `Client.java`)
+1. Create profile (auth)
+2. Join a room (Classic Duo / General / Bot Lounge / custom)
+3. Chat with typing, receipts, media, notifications
+4. Settings: dark mode, bot toggle, notifications, backup/restore
 
-Start `../server` first so the WebSocket relay is available on port 6001.
+## Bot
 
-## High-throughput chat
+- Join **Bot Lounge**, or send `@bot` / `/help` `/joke` `/time` `/ping`
+- Local fallback replies if the server is offline
 
-Messages are stored in **Redux Toolkit** and flushed through a **MessageBatcher** (~32ms / max 250) so 200–500 msg/s does not trigger one React render per message.
+## Backup / restore
 
-UI protections:
+Settings → **Backup chat** / **Restore backup** (JSON).
 
-- memoized `MessageBubble` rows
-- isolated `MessageList` subscription (header/input do not re-render on each append)
-- FlatList virtualization (`windowSize`, batch render, `removeClippedSubviews`)
-- throttled `scrollToEnd`
-- capped store (`MAX_MESSAGES = 2500`) to bound memory
-
-In the chat screen, use **Stress 200/s · 300/s · 500/s** and watch the perf HUD (`ingest`, `flushes`, `store`).
+Start `../server` on port 6001 for realtime multi-user chat.

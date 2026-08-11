@@ -1,25 +1,66 @@
 import { memo } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import type { ChatMessage, ChatRole } from '../types';
-import { colors, spacing } from '../theme';
+import { Image, StyleSheet, Text, View } from 'react-native';
+import { useAppSelector } from '../store/hooks';
+import { getColors, spacing } from '../theme';
+import type { ChatMessage } from '../types';
 
 type MessageBubbleProps = {
   message: ChatMessage;
-  selfRole: ChatRole;
+  selfId: string;
 };
 
-function MessageBubbleComponent({ message, selfRole }: MessageBubbleProps) {
-  const isMine = message.from === selfRole;
+function receiptLabel(status?: string) {
+  if (status === 'read') return '✓✓';
+  if (status === 'delivered') return '✓✓';
+  if (status === 'sent') return '✓';
+  if (status === 'pending') return '·';
+  return '';
+}
+
+function MessageBubbleComponent({ message, selfId }: MessageBubbleProps) {
+  const theme = useAppSelector((state) => state.session.theme);
+  const colors = getColors(theme);
+  const isMine = message.from === selfId;
+  const isBot = message.from === 'bot';
 
   return (
     <View style={[styles.row, isMine ? styles.rowMine : styles.rowTheirs]}>
-      <View style={[styles.bubble, isMine ? styles.bubbleMine : styles.bubbleTheirs]}>
-        <Text style={styles.text} numberOfLines={6}>
-          {message.text}
-        </Text>
-        <Text style={[styles.time, isMine ? styles.timeMine : styles.timeTheirs]}>
-          {message.time}
-        </Text>
+      <View
+        style={[
+          styles.bubble,
+          {
+            backgroundColor: isMine ? colors.bubble : colors.incoming,
+          },
+        ]}
+      >
+        {!isMine ? (
+          <Text style={[styles.author, { color: isBot ? colors.header : colors.textMuted }]}>
+            {message.fromName || message.from}
+          </Text>
+        ) : null}
+        {message.mediaUri ? (
+          <Image source={{ uri: message.mediaUri }} style={styles.image} />
+        ) : null}
+        {message.text ? (
+          <Text style={[styles.text, { color: colors.text }]} numberOfLines={8}>
+            {message.text}
+          </Text>
+        ) : null}
+        <View style={styles.meta}>
+          <Text style={[styles.time, { color: colors.textMuted }]}>{message.time}</Text>
+          {isMine ? (
+            <Text
+              style={[
+                styles.receipt,
+                {
+                  color: message.status === 'read' ? colors.receiptRead : colors.receipt,
+                },
+              ]}
+            >
+              {receiptLabel(message.status)}
+            </Text>
+          ) : null}
+        </View>
       </View>
     </View>
   );
@@ -27,22 +68,22 @@ function MessageBubbleComponent({ message, selfRole }: MessageBubbleProps) {
 
 function propsAreEqual(prev: MessageBubbleProps, next: MessageBubbleProps) {
   return (
-    prev.selfRole === next.selfRole &&
+    prev.selfId === next.selfId &&
     prev.message.id === next.message.id &&
     prev.message.text === next.message.text &&
     prev.message.from === next.message.from &&
-    prev.message.time === next.message.time
+    prev.message.time === next.message.time &&
+    prev.message.mediaUri === next.message.mediaUri &&
+    prev.message.status === next.message.status
   );
 }
 
-/** Memoized bubble — avoids re-rendering unchanged rows when batches append. */
 export const MessageBubble = memo(MessageBubbleComponent, propsAreEqual);
 
 const styles = StyleSheet.create({
   row: {
     marginBottom: spacing.sm,
     paddingHorizontal: spacing.sm,
-    // Approximate fixed row budget helps list recycling feel stable.
     minHeight: 56,
   },
   rowMine: {
@@ -58,26 +99,33 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xs,
     paddingHorizontal: spacing.md,
   },
-  bubbleMine: {
-    backgroundColor: colors.bubble,
+  author: {
+    fontSize: 12,
+    fontWeight: '700',
+    marginBottom: 4,
   },
-  bubbleTheirs: {
-    backgroundColor: colors.incoming,
+  image: {
+    width: 180,
+    height: 140,
+    borderRadius: 6,
+    marginBottom: 6,
   },
   text: {
-    color: colors.text,
     fontSize: 15,
     lineHeight: 20,
   },
-  time: {
+  meta: {
     marginTop: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 4,
+  },
+  time: {
     fontSize: 10,
-    alignSelf: 'flex-end',
   },
-  timeMine: {
-    color: 'rgba(17, 27, 33, 0.65)',
-  },
-  timeTheirs: {
-    color: colors.textMuted,
+  receipt: {
+    fontSize: 11,
+    fontWeight: '700',
   },
 });

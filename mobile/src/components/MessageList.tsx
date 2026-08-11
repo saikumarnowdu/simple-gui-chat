@@ -9,29 +9,27 @@ import {
   type NativeSyntheticEvent,
 } from 'react-native';
 import { useAppSelector } from '../store/hooks';
-import type { ChatMessage, ChatRole } from '../types';
-import { colors, spacing } from '../theme';
+import { getColors, spacing } from '../theme';
+import type { ChatMessage } from '../types';
 import { MessageBubble } from './MessageBubble';
 
 type MessageListProps = {
-  selfRole: ChatRole;
+  selfId: string;
 };
 
-const ESTIMATED_ROW_HEIGHT = 64;
+const ESTIMATED_ROW_HEIGHT = 72;
 
-function MessageListComponent({ selfRole }: MessageListProps) {
+function MessageListComponent({ selfId }: MessageListProps) {
   const messages = useAppSelector((state) => state.messages.items);
+  const theme = useAppSelector((state) => state.session.theme);
+  const colors = getColors(theme);
   const listRef = useRef<FlatList<ChatMessage>>(null);
   const stickToBottomRef = useRef(true);
   const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (!stickToBottomRef.current || messages.length === 0) {
-      return;
-    }
-    if (scrollTimerRef.current) {
-      return;
-    }
+    if (!stickToBottomRef.current || messages.length === 0) return;
+    if (scrollTimerRef.current) return;
     scrollTimerRef.current = setTimeout(() => {
       scrollTimerRef.current = null;
       if (stickToBottomRef.current) {
@@ -42,16 +40,14 @@ function MessageListComponent({ selfRole }: MessageListProps) {
 
   useEffect(
     () => () => {
-      if (scrollTimerRef.current) {
-        clearTimeout(scrollTimerRef.current);
-      }
+      if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
     },
     [],
   );
 
   const renderItem = useCallback<ListRenderItem<ChatMessage>>(
-    ({ item }) => <MessageBubble message={item} selfRole={selfRole} />,
-    [selfRole],
+    ({ item }) => <MessageBubble message={item} selfId={selfId} />,
+    [selfId],
   );
 
   const keyExtractor = useCallback((item: ChatMessage) => item.id, []);
@@ -90,9 +86,9 @@ function MessageListComponent({ selfRole }: MessageListProps) {
       removeClippedSubviews
       ListEmptyComponent={
         <View style={styles.empty}>
-          <Text style={styles.emptyTitle}>No messages yet</Text>
-          <Text style={styles.emptyBody}>
-            Send a message, open the peer role, or run a stress test (200–500 msg/s).
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>No messages yet</Text>
+          <Text style={[styles.emptyBody, { color: colors.textMuted }]}>
+            Chat, share a photo, try @bot /help, or run a stress test.
           </Text>
         </View>
       }
@@ -103,9 +99,7 @@ function MessageListComponent({ selfRole }: MessageListProps) {
 export const MessageList = memo(MessageListComponent);
 
 const styles = StyleSheet.create({
-  list: {
-    flex: 1,
-  },
+  list: { flex: 1 },
   listContent: {
     paddingVertical: spacing.sm,
     flexGrow: 1,
@@ -118,12 +112,10 @@ const styles = StyleSheet.create({
     paddingTop: 80,
   },
   emptyTitle: {
-    color: colors.text,
     fontSize: 16,
     fontWeight: '700',
   },
   emptyBody: {
-    color: colors.textMuted,
     fontSize: 14,
     textAlign: 'center',
     marginTop: spacing.sm,
