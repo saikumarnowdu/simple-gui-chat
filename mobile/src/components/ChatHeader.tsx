@@ -1,33 +1,62 @@
 import { memo } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing } from '../theme';
+import { useAppSelector } from '../store/hooks';
+import { avatarSource, getColors, spacing } from '../theme';
 
 type ChatHeaderProps = {
-  name: string;
-  online: boolean;
-  avatar: number;
+  title: string;
+  subtitle: string;
+  avatarId?: string;
   onBack: () => void;
+  onOpenSettings?: () => void;
 };
 
-function ChatHeaderComponent({ name, online, avatar, onBack }: ChatHeaderProps) {
+function ChatHeaderComponent({
+  title,
+  subtitle,
+  avatarId,
+  onBack,
+  onOpenSettings,
+}: ChatHeaderProps) {
+  const theme = useAppSelector((state) => state.session.theme);
+  const colors = getColors(theme);
+
   return (
-    <View style={styles.header}>
+    <View style={[styles.header, { backgroundColor: colors.header }]}>
       <Pressable onPress={onBack} hitSlop={12} style={styles.backButton} accessibilityRole="button">
-        <Image source={require('../../assets/avatars/3.png')} style={styles.backIcon} tintColor={colors.white} />
+        <Image
+          source={require('../../assets/avatars/3.png')}
+          style={styles.backIcon}
+          tintColor={colors.white}
+        />
       </Pressable>
 
-      <Image source={avatar} style={styles.avatar} />
+      <Image source={avatarSource(avatarId)} style={styles.avatar} />
 
       <View style={styles.identity}>
-        <Text style={styles.name}>{name}</Text>
-        <Text style={styles.status}>{online ? 'Active Now' : 'Offline'}</Text>
+        <Text style={styles.name}>{title}</Text>
+        <Text style={styles.status}>{subtitle}</Text>
       </View>
 
       <View style={styles.actions}>
-        <Image source={require('../../assets/avatars/video.png')} style={styles.actionIcon} tintColor={colors.white} />
-        <Image source={require('../../assets/avatars/phone.png')} style={styles.phoneIcon} tintColor={colors.white} />
-        <Ionicons name="ellipsis-vertical" size={18} color={colors.white} />
+        <Image
+          source={require('../../assets/avatars/video.png')}
+          style={styles.actionIcon}
+          tintColor={colors.white}
+        />
+        <Image
+          source={require('../../assets/avatars/phone.png')}
+          style={styles.phoneIcon}
+          tintColor={colors.white}
+        />
+        {onOpenSettings ? (
+          <Pressable onPress={onOpenSettings} hitSlop={8}>
+            <Ionicons name="settings-outline" size={18} color={colors.white} />
+          </Pressable>
+        ) : (
+          <Ionicons name="ellipsis-vertical" size={18} color={colors.white} />
+        )}
       </View>
     </View>
   );
@@ -37,7 +66,6 @@ export const ChatHeader = memo(ChatHeaderComponent);
 
 const styles = StyleSheet.create({
   header: {
-    backgroundColor: colors.header,
     paddingTop: spacing.sm,
     paddingBottom: spacing.md,
     paddingHorizontal: spacing.sm,
@@ -51,19 +79,17 @@ const styles = StyleSheet.create({
   backIcon: {
     width: 22,
     height: 22,
-    tintColor: colors.white,
   },
   avatar: {
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: colors.headerDark,
   },
   identity: {
     flex: 1,
   },
   name: {
-    color: colors.white,
+    color: '#fff',
     fontSize: 18,
     fontWeight: '700',
   },
@@ -81,11 +107,9 @@ const styles = StyleSheet.create({
   actionIcon: {
     width: 24,
     height: 24,
-    tintColor: colors.white,
   },
   phoneIcon: {
     width: 26,
     height: 22,
-    tintColor: colors.white,
   },
 });

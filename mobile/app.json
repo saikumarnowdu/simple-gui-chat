@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -13,7 +13,11 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.simpleguichat.app"
+      "bundleIdentifier": "com.simpleguichat.app",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Share photos in chat.",
+        "NSCameraUsageDescription": "Capture photos for chat."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -23,10 +27,24 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "package": "com.simpleguichat.app",
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "READ_MEDIA_IMAGES",
+        "POST_NOTIFICATIONS"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-sharing",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Simple GUI Chat to access your photos for media messages."
+        }
+      ],
+      "expo-notifications"
+    ]
   }
 }

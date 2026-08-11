@@ -1,31 +1,43 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { colors, spacing } from '../theme';
+import { useAppSelector } from '../store/hooks';
+import { getColors, spacing } from '../theme';
 
 type MessageInputProps = {
   disabled?: boolean;
   onSend: (text: string) => boolean;
+  onTyping?: () => void;
+  onAttach?: () => void;
 };
 
-export function MessageInput({ disabled, onSend }: MessageInputProps) {
+export function MessageInput({ disabled, onSend, onTyping, onAttach }: MessageInputProps) {
   const [text, setText] = useState('');
+  const theme = useAppSelector((state) => state.session.theme);
+  const colors = getColors(theme);
 
   const handleSend = () => {
-    if (disabled || !text.trim()) {
-      return;
-    }
+    if (disabled || !text.trim()) return;
     const ok = onSend(text);
-    if (ok) {
-      setText('');
-    }
+    if (ok) setText('');
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.backgroundTint, borderTopColor: colors.border }]}>
+      {onAttach ? (
+        <Pressable style={[styles.attach, { backgroundColor: colors.card }]} onPress={onAttach}>
+          <Text style={{ color: colors.header, fontWeight: '700' }}>+</Text>
+        </Pressable>
+      ) : null}
       <TextInput
-        style={styles.input}
+        style={[
+          styles.input,
+          { backgroundColor: colors.inputBackground, color: colors.text },
+        ]}
         value={text}
-        onChangeText={setText}
+        onChangeText={(value) => {
+          setText(value);
+          onTyping?.();
+        }}
         placeholder="Type a message"
         placeholderTextColor={colors.textMuted}
         editable={!disabled}
@@ -34,7 +46,11 @@ export function MessageInput({ disabled, onSend }: MessageInputProps) {
         blurOnSubmit={false}
       />
       <Pressable
-        style={[styles.sendButton, (disabled || !text.trim()) && styles.sendButtonDisabled]}
+        style={[
+          styles.sendButton,
+          { backgroundColor: colors.header },
+          (disabled || !text.trim()) && styles.sendButtonDisabled,
+        ]}
         onPress={handleSend}
         disabled={disabled || !text.trim()}
       >
@@ -51,23 +67,25 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.sm,
-    backgroundColor: colors.backgroundTint,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
+  },
+  attach: {
+    width: 44,
+    height: 44,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   input: {
     flex: 1,
     minHeight: 44,
     maxHeight: 120,
-    backgroundColor: colors.inputBackground,
     borderRadius: 8,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     fontSize: 16,
-    color: colors.text,
   },
   sendButton: {
-    backgroundColor: colors.header,
     borderRadius: 8,
     paddingHorizontal: spacing.lg,
     height: 44,
@@ -78,7 +96,7 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   sendLabel: {
-    color: colors.white,
+    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
   },

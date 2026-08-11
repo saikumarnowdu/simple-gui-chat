@@ -5,55 +5,84 @@ import { MessageInput } from '../components/MessageInput';
 import { MessageList } from '../components/MessageList';
 import { PerfHud } from '../components/PerfHud';
 import { StressControls } from '../components/StressControls';
-import { ROLE_META } from '../config';
 import { useChat } from '../hooks/useChat';
 import { useAppSelector } from '../store/hooks';
-import type { ChatRole } from '../types';
-import { colors, spacing } from '../theme';
+import { getColors, spacing } from '../theme';
+import type { ChatRole, UserProfile } from '../types';
+import { pickChatImage } from '../utils/media';
 
 type ChatScreenProps = {
-  role: ChatRole;
+  profile: UserProfile;
+  roomId: string;
+  roomName: string;
+  legacyRole?: ChatRole | null;
   onBack: () => void;
+  onOpenSettings: () => void;
 };
 
-const AVATARS = {
-  gaitonde: require('../../assets/avatars/1.png'),
-  bunty: require('../../assets/avatars/2.png'),
-};
-
-export function ChatScreen({ role, onBack }: ChatScreenProps) {
-  const peerRole = role === 'gaitonde' ? 'bunty' : 'gaitonde';
-  const peerMeta = ROLE_META[peerRole];
-  const { sendMessage, reconnect, clearError, startStress, stopStress } = useChat(role);
+export function ChatScreen({
+  profile,
+  roomId,
+  roomName,
+  legacyRole = null,
+  onBack,
+  onOpenSettings,
+}: ChatScreenProps) {
+  const { sendMessage, notifyTyping, reconnect, clearError, startStress, stopStress } = useChat({
+    profile,
+    roomId,
+    legacyRole,
+  });
 
   const status = useAppSelector((state) => state.session.status);
-  const presence = useAppSelector((state) => state.session.presence);
+  const roomMembers = useAppSelector((state) => state.session.roomMembers);
+  const typingUsers = useAppSelector((state) => state.session.typingUsers);
   const error = useAppSelector((state) => state.session.error);
+  const theme = useAppSelector((state) => state.session.theme);
+  const colors = getColors(theme);
 
-  const peerOnline = presence[peerRole];
-  const canSend = status === 'joined';
+  const others = roomMembers.filter((m) => m.userId !== profile.userId);
+  const onlineCount = others.filter((m) => m.online).length;
+  const typingNames = Object.values(typingUsers);
+  const subtitle = typingNames.length
+    ? `${typingNames.join(', ')} typing…`
+    : others.length
+      ? `${onlineCount}/${others.length} online`
+      : status === 'joined'
+        ? 'Connected'
+        : status;
+
+  const headerAvatar =
+    others.find((m) => m.userId === 'bot')?.avatarId ||
+    others[0]?.avatarId ||
+    (legacyRole === 'gaitonde' ? '2' : legacyRole === 'bunty' ? '1' : profile.avatarId);
+
+  const canSend = status === 'joined' || roomId === 'bot-lounge' || roomId.startsWith('local-');
+
+  const onAttach = async () => {
+    const uri = await pickChatImage();
+    if (uri) {
+      sendMessage('', uri);
+    }
+  };
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
       <ChatHeader
-        name={peerMeta.displayName}
-        online={peerOnline}
-        avatar={AVATARS[peerRole]}
+        title={roomName}
+        subtitle={subtitle}
+        avatarId={headerAvatar}
         onBack={onBack}
+        onOpenSettings={onOpenSettings}
       />
 
-      <View style={styles.banner}>
+      <View style={[styles.banner, { backgroundColor: colors.headerDark }]}>
         <Text style={styles.bannerText}>
-          You are {ROLE_META[role].displayName} ·{' '}
-          {status === 'joined'
-            ? peerOnline
-              ? 'peer online'
-              : 'waiting for peer'
-            : status}
+          {profile.displayName} · {roomName} · {status}
         </Text>
         {(status === 'disconnected' || status === 'error') && (
           <Pressable onPress={reconnect}>
-            <Text style={styles.reconnect}>Reconnect</Text>
+            <Text style={[styles.reconnect, { color: colors.online }]}>Reconnect</Text>
           </Pressable>
         )}
       </View>
@@ -63,27 +92,28 @@ export function ChatScreen({ role, onBack }: ChatScreenProps) {
 
       {error ? (
         <Pressable style={styles.errorBox} onPress={clearError}>
-          <Text style={styles.errorText}>{error}</Text>
-          <Text style={styles.errorHint}>Tap to dismiss</Text>
+          <Text style={[styles.errorText, { color: colors.danger }]}>{error}</Text>
+          <Text style={[styles.errorHint, { color: colors.textMuted }]}>Tap to dismiss</Text>
         </Pressable>
       ) : null}
 
-      <MessageList selfRole={role} />
+      <MessageList selfId={profile.userId} />
 
-      <SafeAreaView edges={['bottom']} style={styles.inputSafe}>
-        <MessageInput disabled={!canSend} onSend={sendMessage} />
+      <SafeAreaView edges={['bottom']} style={{ backgroundColor: colors.backgroundTint }}>
+        <MessageInput
+          disabled={!canSend}
+          onSend={sendMessage}
+          onTyping={notifyTyping}
+          onAttach={onAttach}
+        />
       </SafeAreaView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
+  safe: { flex: 1 },
   banner: {
-    backgroundColor: colors.headerDark,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     flexDirection: 'row',
@@ -97,26 +127,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   reconnect: {
-    color: colors.online,
     fontWeight: '700',
     fontSize: 12,
   },
   errorBox: {
     backgroundColor: '#FEE2E2',
     padding: spacing.md,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#FECACA',
   },
-  errorText: {
-    color: colors.danger,
-    fontSize: 13,
-  },
-  errorHint: {
-    color: colors.textMuted,
-    fontSize: 11,
-    marginTop: 4,
-  },
-  inputSafe: {
-    backgroundColor: colors.backgroundTint,
-  },
+  errorText: { fontSize: 13 },
+  errorHint: { fontSize: 11, marginTop: 4 },
 });
